@@ -319,8 +319,10 @@ public class FinnChartView extends View {
         }
 
         int colorLine = 0xAA0000FF;
+        float[] totalAmount = new float[displayPlotNum];
         for (String key : mChartDrawData.keySet()) {
             List<FinnDaily> portfolio = new ArrayList<>();
+            float[] amount = new float[displayPlotNum];
             switch (mChartType) {
                 case TYPE_DAILY:
                     portfolio = mChartDrawData.get(key).get(mCurrentMonth);
@@ -344,7 +346,6 @@ public class FinnChartView extends View {
             }
 
             if (portfolio != null && portfolio.size() > 0) {
-                float[] amount = new float[displayPlotNum];
                 int index = displayPlotNum - 1;
                 for (int i = portfolio.size() - 1; i > -1; i--, index--) {
                     amount[index] = portfolio.get(i).getAmount();
@@ -362,6 +363,20 @@ public class FinnChartView extends View {
                 }
                 colorLine += 5000;
             }
+            for (int amountIndex = 0; amountIndex < displayPlotNum; amountIndex++) {
+                totalAmount[amountIndex] += amount[amountIndex];
+            }
+        }
+
+        // price
+        float currentAmount, nextAmount;
+        float x = xInterval / 2;
+        for (int i = 0; i < displayPlotNum - 1; i++) {
+            nextAmount = totalAmount[i + 1];
+            currentAmount = totalAmount[i];
+            drawSmoothLine(canvas, x, mMainFrameTop + (mMax - currentAmount) * yInterval, x + xInterval, mMainFrameTop + (mMax - nextAmount) * yInterval,
+                    colorLine, LINE_WIDTH);
+            x += xInterval;
         }
 
         canvas.drawRect(mMainFrameArea, mPaintFrame);
