@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Chart -->
+    <color name="chart_label_text">#FF4B4B4B</color>
+    <color name="chart_background">#FFFFFFFF</color>
+    <color name="chart_prev">#FFFF8106</color>
+    <color name="chart_frame">#FFD3CCC1</color>
+    <color name="chart_aux">#FFD3CCC1</color>
+
+</resources>
