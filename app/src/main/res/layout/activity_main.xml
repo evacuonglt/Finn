@@ -8,6 +8,44 @@
     <com.nanacorp.finn.view.FinnChartView
         android:id="@+id/main_chart_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@+id/button_layout" />
+
+    <LinearLayout
+        android:id="@+id/button_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/white">
+
+        <Button
+            android:id="@+id/button_daily"
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/holo_blue_bright"
+            android:padding="@dimen/chart_text_size"
+            android:text="daily" />
+
+        <Button
+            android:id="@+id/button_monthly"
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/chart_text_size"
+            android:layout_marginRight="@dimen/chart_text_size"
+            android:background="@android:color/holo_blue_bright"
+            android:padding="@dimen/chart_text_size"
+            android:text="monthly" />
+
+        <Button
+            android:id="@+id/button_quarter"
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/holo_blue_bright"
+            android:padding="@dimen/chart_text_size"
+            android:text="quarter" />
+    </LinearLayout>
 
 </RelativeLayout>

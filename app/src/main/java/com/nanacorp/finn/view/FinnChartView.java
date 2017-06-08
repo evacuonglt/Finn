@@ -10,6 +10,7 @@ import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 import com.nanacorp.finn.R;
@@ -20,6 +21,7 @@ import com.nanacorp.finn.entity.FinnPortfolioData;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import static com.nanacorp.finn.entity.FinnPortfolioData.DAY_DISP_PLOT_NUM;
+import static com.nanacorp.finn.entity.FinnPortfolioData.DAY_DISPLAY_PLOT_NUM;
 import static com.nanacorp.finn.entity.FinnPortfolioData.MONTHS;
 import static com.nanacorp.finn.entity.FinnPortfolioData.QUARTER;
 
@@ -39,15 +41,15 @@ import static com.nanacorp.finn.entity.FinnPortfolioData.QUARTER;
 
 public class FinnChartView extends View {
 
-    private static final int TYPE_DAILY = 1;
-    private static final int TYPE_MONTHLY = 2;
-    private static final int TYPE_QUARTER = 3;
+    public static final int TYPE_DAILY = 1;
+    public static final int TYPE_MONTHLY = 2;
+    public static final int TYPE_QUARTER = 3;
 
     private static final float LINE_WIDTH = 1;
     private static final float NORMAL_WIDTH_RATIO = 0.8f;
     private static final float NORMAL_ASPECT_RATIO = 1.1f;
 
-    private int displayPlotNum = DAY_DISP_PLOT_NUM;
+    private int displayPlotNum = DAY_DISPLAY_PLOT_NUM;
     private float chartHeight;
     private float chartWidth;
 
@@ -79,12 +81,16 @@ public class FinnChartView extends View {
     private int mChartType = TYPE_DAILY;
     public Map<String, Map<String, List<FinnDaily>>> mChartDrawData = new HashMap<>();
     private String mCurrentMonth = MONTHS.get(11);
-    public static final int MAX_DAY_OF_MONTH = 31;
+    private Date mCurrentDate;
 
     public void processChartData() {
+        if (finnPortfolioDatas.size() < 1) {
+            return;
+        }
+
         switch (mChartType) {
             case TYPE_DAILY:
-                displayPlotNum = DAY_DISP_PLOT_NUM;
+                displayPlotNum = DAY_DISPLAY_PLOT_NUM;
                 break;
 
             case TYPE_MONTHLY:
@@ -98,6 +104,19 @@ public class FinnChartView extends View {
             default:
                 break;
         }
+
+        mCurrentDate = null;
+        for (FinnPortfolioData eachPortfolio : finnPortfolioDatas) {
+            Date date = eachPortfolio.getMaxDate();
+            if (mCurrentDate == null || mCurrentDate.getTime() < date.getTime()) {
+                mCurrentDate = date;
+            }
+        }
+
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(mCurrentDate);
+        mCurrentMonth = MONTHS.get(calendar.get(Calendar.MONTH));
         for (FinnPortfolioData eachPortfolio : finnPortfolioDatas) {
             switch (mChartType) {
                 case TYPE_DAILY:
@@ -125,12 +144,12 @@ public class FinnChartView extends View {
         if (keySet.size() > 0) {
             switch (mChartType) {
                 case TYPE_DAILY:
-                    for (int i = 0; i < MAX_DAY_OF_MONTH; i++) {
+                    for (int i = 0; i < DAY_DISPLAY_PLOT_NUM; i++) {
                         float minOfPeriod = Float.MAX_VALUE;
                         float maxOfPeriod = 0;
                         for (String keyPortfolioId : keySet) {
                             List<FinnDaily> portfolioData = chartDrawData.get(keyPortfolioId).get(mCurrentMonth);
-                            if (i < portfolioData.size()) {
+                            if (portfolioData != null && i < portfolioData.size()) {
                                 FinnDaily daily = portfolioData.get(i);
                                 minOfPeriod = Math.min(minOfPeriod, daily.amount);
                                 maxOfPeriod += daily.amount;
@@ -147,7 +166,7 @@ public class FinnChartView extends View {
                         float maxOfPeriod = 0;
                         for (String keyPortfolioId : keySet) {
                             List<FinnDaily> portfolioData = chartDrawData.get(keyPortfolioId).get(month);
-                            if (portfolioData.size() > 0) {
+                            if (portfolioData != null && portfolioData.size() > 0) {
                                 FinnDaily daily = portfolioData.get(0);
                                 minOfPeriod = Math.min(minOfPeriod, daily.amount);
                                 maxOfPeriod += daily.amount;
@@ -164,7 +183,7 @@ public class FinnChartView extends View {
                         float maxOfPeriod = 0;
                         for (String keyPortfolioId : keySet) {
                             List<FinnDaily> portfolioData = chartDrawData.get(keyPortfolioId).get(quarter);
-                            if (portfolioData.size() > 0) {
+                            if (portfolioData != null && portfolioData.size() > 0) {
                                 FinnDaily daily = portfolioData.get(0);
                                 minOfPeriod = Math.min(minOfPeriod, daily.amount);
                                 maxOfPeriod += daily.amount;
@@ -185,6 +204,13 @@ public class FinnChartView extends View {
     public void setChartData(List<FinnPortfolioData> historicalPriceData) {
 
         finnPortfolioDatas = historicalPriceData;
+        processChartData();
+        invalidate();
+    }
+
+    public void setChartType(int chartType) {
+
+        mChartType = chartType;
         processChartData();
         invalidate();
     }
@@ -253,6 +279,8 @@ public class FinnChartView extends View {
             FinnAmountRange minMaxAmount = getMinMaxAmount(mChartDrawData);
             mMin = minMaxAmount.minAmount;
             mMax = minMaxAmount.maxAmount;
+        } else {
+            return;
         }
 
         float amountInterval = (int) Math.pow(10, Integer.toString((int) (mMax - mMin)).length() - 1);
@@ -270,11 +298,11 @@ public class FinnChartView extends View {
         float xInterval = chartWidth / displayPlotNum;
         float yInterval = chartHeight / mMax;
 
-        // draw date bar
         float lx = xInterval / 2;
         mPaintAux.setColor(ContextCompat.getColor(getContext(), R.color.chart_aux));
         for (int i = 0; i < displayPlotNum; i++) {
-            drawString(canvas, "test", lx, mMainFrameBottom + fontHeight * 1.2f, "c", ContextCompat.getColor(getContext(), R.color.chart_label_text), mTextSize);
+            drawString(canvas, getDisplayDate(mCurrentDate, displayPlotNum - i - 1),
+                    lx, mMainFrameBottom + fontHeight * 1.2f, "c", ContextCompat.getColor(getContext(), R.color.chart_label_text), mTextSize);
             canvas.drawLine(lx, mMainFrameTop, lx, mMainFrameBottom, mPaintAux);
             lx += xInterval;
         }
@@ -287,28 +315,45 @@ public class FinnChartView extends View {
             drawDottedLine(canvas, mMainFrameLeft, mMainFrameTop + (yInterval * (mMax - y)), mMainFrameRight, mMainFrameTop + (yInterval * (mMax - y)), ContextCompat.getColor(getContext(), R.color.chart_aux));
         }
         if (y == mMin) {
-            //drawString(canvas, getFormatedValue(y, false, mMaxDigitsLabel, mMinDigitsLabel, true), mMainFrameRight + 5, mMainFrameBottom, "l", ContextCompat.getColor(getContext(), R.color.chart_label_text), mTextSize);
+            drawString(canvas, getFormatedValue(y, false, mMaxDigitsLabel, mMinDigitsLabel, true), mMainFrameRight + 5, mMainFrameBottom, "l", ContextCompat.getColor(getContext(), R.color.chart_label_text), mTextSize);
         }
 
         int colorLine = 0xAA0000FF;
         for (String key : mChartDrawData.keySet()) {
-
-            List<FinnDaily> portfolio = mChartDrawData.get(key).get(mCurrentMonth);
-            if (portfolio.size() > 0) {
-                Date[] date = new Date[displayPlotNum];
-                float[] amount = new float[displayPlotNum];
-                int dataNum = 0;
-                for (int i = 0; i < displayPlotNum; i++, dataNum++) {
-                    if (i < portfolio.size() && dataNum < displayPlotNum) {
-                        date[dataNum] = portfolio.get(i).date;
-                        amount[dataNum] = portfolio.get(i).getAmount();
+            List<FinnDaily> portfolio = new ArrayList<>();
+            switch (mChartType) {
+                case TYPE_DAILY:
+                    portfolio = mChartDrawData.get(key).get(mCurrentMonth);
+                    break;
+                case TYPE_MONTHLY:
+                    for (String month : MONTHS) {
+                        List<FinnDaily> eachMonth = mChartDrawData.get(key).get(month);
+                        if (eachMonth != null && eachMonth.size() > 0) {
+                            portfolio.add(eachMonth.get(0));
+                        }
                     }
+                    break;
+                case TYPE_QUARTER:
+                    for (String month : QUARTER) {
+                        List<FinnDaily> eachMonth = mChartDrawData.get(key).get(month);
+                        if (eachMonth != null && eachMonth.size() > 0) {
+                            portfolio.add(eachMonth.get(0));
+                        }
+                    }
+                    break;
+            }
+
+            if (portfolio != null && portfolio.size() > 0) {
+                float[] amount = new float[displayPlotNum];
+                int index = displayPlotNum - 1;
+                for (int i = portfolio.size() - 1; i > -1; i--, index--) {
+                    amount[index] = portfolio.get(i).getAmount();
                 }
 
                 // price
                 float currentAmount, nextAmount;
                 float x = xInterval / 2;
-                for (int i = 0; i < dataNum - 1; i++) {
+                for (int i = 0; i < displayPlotNum - 1; i++) {
                     nextAmount = amount[i + 1];
                     currentAmount = amount[i];
                     drawSmoothLine(canvas, x, mMainFrameTop + (mMax - currentAmount) * yInterval, x + xInterval, mMainFrameTop + (mMax - nextAmount) * yInterval,
@@ -367,18 +412,26 @@ public class FinnChartView extends View {
     }
 
 
-    private String getDisplayDate(@NonNull Date date) {
+    private String getDisplayDate(@NonNull Date date, int index) {
+        Calendar cal = Calendar.getInstance();
         switch (mChartType) {
             case TYPE_DAILY:
                 SimpleDateFormat daily = new SimpleDateFormat("dd/MM", Locale.US);
-                return daily.format(date);
+                cal.setTime(date);
+                cal.add(Calendar.DATE, -index);
+                return daily.format(cal.getTime());
 
             case TYPE_MONTHLY:
                 SimpleDateFormat month = new SimpleDateFormat("MMM", Locale.US);
-                return month.format(date);
+                cal.setTime(date);
+                cal.add(Calendar.MONTH, -index);
+                return month.format(cal.getTime());
 
             case TYPE_QUARTER:
-                return date.toString();
+                SimpleDateFormat quarter = new SimpleDateFormat("MMM", Locale.US);
+                cal.setTime(date);
+                cal.add(Calendar.MONTH, -index * 3);
+                return quarter.format(cal.getTime());
 
             default:
                 return date.toString();

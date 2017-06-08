@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,8 @@ public class FinnPortfolioData {
 
     public static final List<String> MONTHS = Arrays.asList("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC");
     public static final List<String> QUARTER = Arrays.asList("MAR", "JUN", "SEP", "DEC");
-    public static final int DAY_DISP_PLOT_NUM = 21;
+    public static final int DAY_DISPLAY_PLOT_NUM = 21;
+    private Date maxDate;
 
 
     private void classifyData() {
@@ -49,11 +51,21 @@ public class FinnPortfolioData {
             calendar.setTime(daily.date);
             int currentMonth = calendar.get(Calendar.MONTH);
             monthData.get(currentMonth).add(daily);
+            if (maxDate == null || maxDate.getTime() < daily.date.getTime()) {
+                maxDate = daily.date;
+            }
         }
 
         for (int i = 0; i < MONTHS.size(); i++) {
             monthlyClassifyData.put(MONTHS.get(i), monthData.get(i));
         }
+    }
+
+    public Date getMaxDate() {
+        if (monthlyClassifyData == null) {
+            classifyData();
+        }
+        return maxDate;
     }
 
     public Map<String,List<FinnDaily>> getDataDaily(String month) {
@@ -67,7 +79,12 @@ public class FinnPortfolioData {
         if (monthlyClassifyData == null) {
             classifyData();
         }
-        data.put(month, monthlyClassifyData.get(month));
+        List<FinnDaily> monthEntry = monthlyClassifyData.get(month);
+        if (monthEntry.size() <= DAY_DISPLAY_PLOT_NUM) {
+            data.put(month, monthEntry);
+        } else {
+            data.put(month, monthEntry.subList(monthEntry.size() - DAY_DISPLAY_PLOT_NUM, monthEntry.size()));
+        }
         return data;
     }
 

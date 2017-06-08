@@ -7,7 +7,7 @@ import java.util.Date;
 
 /**
  * Created by lcuong on 6/6/17.
- *
+ * <p>
  * Daily change Entity
  */
 
@@ -19,10 +19,6 @@ public class FinnDaily {
     @SerializedName("date")
     @Expose
     public Date date;
-
-    public String getDate(){
-        return date.toString();
-    }
 
     public float getAmount() {
         return amount;

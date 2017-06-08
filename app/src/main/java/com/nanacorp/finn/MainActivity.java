@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.View;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -19,7 +20,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements View.OnClickListener {
 
     private List<FinnPortfolioData> mChartData = null;
     private FinnChartView mFinnChartView = null;
@@ -46,9 +47,7 @@ public class MainActivity extends Activity {
                     case 200:
                         mChartData = response.body();
                         if (mFinnChartView != null) {
-                            Log.d("tuancuong", "setChartData ");
                             mFinnChartView.setChartData(mChartData);
-                            //mFinnChartView.setVisibility(View.VISIBLE);
                         }
                         break;
 
@@ -64,5 +63,25 @@ public class MainActivity extends Activity {
         });
 
         mFinnChartView = (FinnChartView) this.findViewById(R.id.main_chart_view);
+        this.findViewById(R.id.button_daily).setOnClickListener(this);
+        this.findViewById(R.id.button_monthly).setOnClickListener(this);
+        this.findViewById(R.id.button_quarter).setOnClickListener(this);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.button_daily:
+                mFinnChartView.setChartType(FinnChartView.TYPE_DAILY);
+                break;
+            case R.id.button_monthly:
+                mFinnChartView.setChartType(FinnChartView.TYPE_MONTHLY);
+                break;
+            case R.id.button_quarter:
+                mFinnChartView.setChartType(FinnChartView.TYPE_QUARTER);
+                break;
+            default:
+                break;
+        }
     }
 }
